@@ -1,0 +1,10 @@
+﻿  GATE_EMT_DTS_1.0.cpp
+  tcpgateW.cpp
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(98,44): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(105,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(116,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(127,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(138,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(149,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+  Создание кода...
+  GATE_EMT_DTS_1.0.vcxproj -> D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\x64\Debug\GATE_EMT_DTS_1.0.exe
