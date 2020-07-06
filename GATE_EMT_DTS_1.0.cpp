@@ -15,7 +15,6 @@ void f()
 
 int main()
 {
-
     /*std::thread t(f);
     HANDLE hand = t.native_handle();
     DWORD ress;

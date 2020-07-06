@@ -624,7 +624,6 @@ int TCPClient::thread_tcp_client()
 
             *buf_write = 3;
             count_send = 0;
-
             for (;;)
             {
                 wsabuf_write.buf = buf_write+count_send;
@@ -665,7 +664,7 @@ int TCPClient::thread_tcp_client()
                     sock_client = INVALID_SOCKET;
                     break;
                 }
-
+                
                 count_send += count_get_byte;
 
                 if (count_send == 0)
@@ -676,9 +675,10 @@ int TCPClient::thread_tcp_client()
                     sock_client = INVALID_SOCKET;
                     break;
                 }
-                else if (count_send < NUM_DATA_WRITE) continue;
-            }                 
+                else if (count_send < NUM_DATA_WRITE) continue;    
 
+                break;
+            }                 
             if (sock_client == INVALID_SOCKET)
             {
                 break;
@@ -728,7 +728,6 @@ int TCPClient::thread_tcp_client()
                     sock_client = INVALID_SOCKET;
                     break;
                 }
-
                 
                 count_read += count_get_byte;
               
@@ -765,6 +764,7 @@ int TCPClient::thread_tcp_client()
             ibuf = bufmemory;
             jbuf = buf_read;
             jbuf += 5;
+
             WaitForSingleObject(mutex, INFINITE);
             for (int i = 0; i < set.size_data * k_data; i++)
             {
