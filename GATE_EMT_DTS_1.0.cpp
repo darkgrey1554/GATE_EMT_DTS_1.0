@@ -4,8 +4,34 @@
 #include <iostream>
 #include "tcpgateW.h"
 
+#define SIZEMASS 100000
+
+void f()
+{
+    next:
+    Sleep(1000);
+    goto next;
+}
+
 int main()
 {
+
+    /*std::thread t(f);
+    HANDLE hand = t.native_handle();
+    DWORD ress;
+    std::cout << hand << std::endl;
+    std::cout << GetThreadId(t.native_handle()) << std::endl;
+next1:
+    if (GetExitCodeThread(t.native_handle(), &ress))
+    {
+        std::cout << ress << std::endl;
+    }
+    else
+    {
+        std::cout << "ERROR " << GetLastError() <<std::endl;
+    }
+    Sleep(3000);
+    goto next1;*/
 
     HANDLE mutex1;
     HANDLE memory1;
@@ -21,12 +47,12 @@ int main()
     char* ibuf;
 
     mutex1= CreateMutexA(NULL, FALSE, "mutexsharmemory_emtdts_analog_in"); 
-    memory1 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, 100 * 4, "sharmemory_emtdts_analog_in");
-    bufmemory1 = (char*)MapViewOfFile(memory1, FILE_MAP_ALL_ACCESS, 0, 0, 100 * 4);
+    memory1 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_analog_in");
+    bufmemory1 = (char*)MapViewOfFile(memory1, FILE_MAP_ALL_ACCESS, 0, 0, SIZEMASS * 4);
 
     mutex2 = CreateMutexA(NULL, FALSE, "mutexsharmemory_emtdts_analog_out");
-    memory2 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, 100 * 4, "sharmemory_emtdts_analog_out");
-    bufmemory2 = (char*)MapViewOfFile(memory2, FILE_MAP_ALL_ACCESS, 0, 0, 100 * 4);
+    memory2 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_analog_out");
+    bufmemory2 = (char*)MapViewOfFile(memory2, FILE_MAP_ALL_ACCESS, 0, 0, SIZEMASS * 4);
     semaphor2 = CreateSemaphoreA(NULL, 0, 1, "semaphorsharmemory_emtdts_analog_out");
  
 
@@ -50,14 +76,14 @@ next:
     WaitForSingleObject(mutex1, INFINITE);
     f = (float*)bufmemory1;
     std::cout << *f << "  ";
-    f = (float*)(bufmemory1+396);
+    f = (float*)(bufmemory1+ SIZEMASS*4-4);
     std::cout << *f << std::endl;
     ReleaseMutex(mutex1);
 
     ff = tick;
     WaitForSingleObject(mutex2, INFINITE);
     ibuf = bufmemory2;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < SIZEMASS; i++)
     {
         for (int i = 0; i < 4; i++)
         {
@@ -70,6 +96,6 @@ next:
 
     ReleaseSemaphore(semaphor2, 1, NULL);
     tick++;
-    Sleep(100);
+    Sleep(2000);
     goto next;
 }

@@ -9,6 +9,7 @@
 
 #define TIME_DIV 20
 
+
 enum class TypeData
 {
 	EMPTY,
@@ -64,8 +65,9 @@ public:
 
 	ConfigInfoTCPUnit set;
 
-	void virtual restart_thread() {}
-	void virtual close_tcp_unit() {}
+	void virtual restart_thread() {};
+	void virtual close_tcp_unit() {};
+	void virtual status_thread() {};
 
 	static TCPUnit* create_tcp_unit(ConfigInfoTCPUnit unit);
 };
@@ -82,6 +84,7 @@ public:
 	TCPServer(ConfigInfoTCPUnit confgate);
 	void restart_thread() override;
 	void close_tcp_unit() override;
+	void status_thread() override;
 
 };
 
@@ -96,5 +99,5 @@ public:
 	TCPClient(ConfigInfoTCPUnit confgate);
 	void restart_thread() override;
 	void close_tcp_unit() override;
-
+	void status_thread() override;
 };

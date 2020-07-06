@@ -1,5 +1,6 @@
 #include "tcpgateW.h"
 
+#define NUM_DATA_WRITE 1
 
 std::ostream& operator<<(std::ostream& out, TypeSignal& m)
 {
@@ -269,13 +270,15 @@ int TCPServer::thread_tcp_server()
     DWORD result_wait_send;
 
     /// --- буферы для передачи данных --- ///
-    WSABUF wsabuf_write;
+
     char* ibuf;
     char* jbuf;
     char* buf_write = new char[set.size_data*k_data+4];
     DWORD flag_send = 0;
     DWORD count_send = 0;
-
+    DWORD count_get_byte_send = 0;
+    
+    WSABUF wsabuf_write;
     wsabuf_write.buf = buf_write;
     wsabuf_write.len = set.size_data * k_data + 4;
 
@@ -385,49 +388,57 @@ int TCPServer::thread_tcp_server()
             }
             ReleaseMutex(mutex);
 
-            flag_send = 0;
-            if (WSASend(connect_client, &wsabuf_write, 1, &count_send, flag_send, &send_overlapped, NULL) == SOCKET_ERROR)
+            count_get_byte_send = 0;
+            count_send = 0;
+
+            for (;;)
             {
-                last_error = WSAGetLastError();
-                if (last_error != WSA_IO_PENDING)
+                flag_send = 0;
+                wsabuf_write.buf = buf_write+count_send;
+                wsabuf_write.len = set.size_data * k_data + 4-count_send;
+
+                if (WSASend(connect_client, &wsabuf_write, 1, &count_get_byte_send, flag_send, &send_overlapped, NULL) == SOCKET_ERROR)
                 {
-                    std::cout << "SERVER ID: " << set.id_unit << "\tERROR_SEND CODE_ERROR: " << last_error << std::endl;
-                
-                    if (last_error == 10035 || last_error == 10038 || last_error == 10050 || last_error == 10051 || last_error == 10052 ||
-                        last_error == 10053 || last_error == 10054 || last_error == 10057 || last_error == 10058 || last_error == 10053 ||
-                        last_error == 10061 || last_error == 10064 || last_error == 10065 || last_error == 10101)
+                    last_error = WSAGetLastError();
+                    if (last_error != WSA_IO_PENDING)
                     {
+                        std::cout << "SERVER ID: " << set.id_unit << "\tERROR_SEND CODE_ERROR: " << last_error << std::endl;                
                         closesocket(connect_client);
                         Sleep(2000);
-                        break;
+                        connect_client = INVALID_SOCKET;
+                        break;                        
                     }
-                }
 
+                }
+                result_wait_send = WSAWaitForMultipleEvents(1, &send_overlapped.hEvent, TRUE, INFINITE, TRUE);
+                if (result_wait_send == WSA_WAIT_FAILED)
+                {
+                    last_error = WSAGetLastError();
+                    std::cout << "SERVER ID: " << set.id_unit << "\tERROR_WSASEND  CODE_ERROR: " << last_error << std::endl;
+                    closesocket(connect_client);
+                    Sleep(2000);
+                    connect_client = INVALID_SOCKET;
+                    break;
+                }
+                if (!WSAGetOverlappedResult(connect_client, &send_overlapped, &count_get_byte_send, FALSE, &flag_send))
+                {
+                    last_error = WSAGetLastError();
+                    std::cout << "SERVER ID: " << set.id_unit << "\tERROR_WSASEND  CODE_ERROR: " << last_error << std::endl;
+                    closesocket(connect_client);
+                    Sleep(2000);
+                    connect_client = INVALID_SOCKET;
+                    break;
+                }
+                WSAResetEvent(send_overlapped.hEvent);
+
+                count_send += count_get_byte_send;
+                if (count_send < set.size_data * k_data + 4)
+                {
+                    continue;
+                }
+                else break;
             }
-            result_wait_send = WSAWaitForMultipleEvents(1, &send_overlapped.hEvent, TRUE, INFINITE, TRUE);
-            if (result_wait_send == WSA_WAIT_FAILED)
-            {
-                last_error = WSAGetLastError();
-                std::cout << "SERVER ID: " << set.id_unit << "\tERROR_WSASEND  CODE_ERROR: " << last_error << std::endl;
-                closesocket(connect_client);
-                Sleep(2000);
-                break;
-            }
-            if (!WSAGetOverlappedResult(connect_client, &send_overlapped, &count_send, FALSE, &flag_send))
-            {
-                last_error = WSAGetLastError();
-                std::cout << "SERVER ID: " << set.id_unit << "\tERROR_WSASEND  CODE_ERROR: " << last_error << std::endl;
-                closesocket(connect_client);
-                Sleep(2000);
-                break;
-            }
-            if (count_send != set.size_data * k_data + 4)
-            {
-                closesocket(connect_client);
-                Sleep(2000);
-                break;
-            }
-            WSAResetEvent(send_overlapped.hEvent);
+            if (connect_client == INVALID_SOCKET) break;            
         }
     }
     
@@ -436,10 +447,16 @@ int TCPServer::thread_tcp_server()
 }
 
 void TCPServer::close_tcp_unit()
-{}
+{
+}
 
 void TCPServer::restart_thread()
-{}
+{
+}
+
+void TCPServer::status_thread()
+{
+}
 
 
 
@@ -461,8 +478,8 @@ int TCPClient::thread_tcp_client()
         << "\tTYPEDATA:" << set.type_data << std::endl;
 
     int k_data = 0;
-    if (set.type_data == TypeData::ANALOG || set.type_data == TypeData::DISCRETE) k_data = 4;
-    if (set.type_data == TypeData::GROUP || set.type_data == TypeData::BINAR)     k_data = 1;
+    if (set.type_data == TypeData::ANALOG || set.type_data == TypeData::DISCRETE) { k_data = 4; }
+    else if (set.type_data == TypeData::GROUP || set.type_data == TypeData::BINAR) k_data = 1;
 
     DWORD last_error;
 
@@ -474,6 +491,7 @@ int TCPClient::thread_tcp_client()
     char* bufmemory;
 
     WSADATA wsadata;
+
     WSAOVERLAPPED recv_overlapped;
     SecureZeroMemory((PVOID)&recv_overlapped, sizeof(WSAOVERLAPPED));
     recv_overlapped.hEvent = WSACreateEvent();
@@ -488,29 +506,29 @@ int TCPClient::thread_tcp_client()
     DWORD result_wait_recv;
 
     /// --- буферы для передачи данных --- ///
-    WSABUF wsabuf_read;
-    WSABUF wsabuf_write;
+    
     char* ibuf;
     char* jbuf;
     char* buf_read = new char[set.size_data * k_data + 5];
-    int num_data_read = 1;
-    char* buf_write = new char[num_data_read];
+    char* buf_write = new char[NUM_DATA_WRITE];
+    
     DWORD flag_read = 0;
     DWORD count_read = 0;
     DWORD count_get_byte = 0;
     int num_data_from_server=0;
-
-    wsabuf_write.buf = buf_write;
-    wsabuf_write.len = num_data_read;
-    wsabuf_read.buf = buf_read;
-    wsabuf_read.len = set.size_data * k_data + 5;
+    int command = 0;
 
     DWORD count_send;
-    DWORD flag_send=0;
+    DWORD flag_send = 0;
     DWORD result_wait_send = 0;
-    float f;
-    char s;
-    char status_WSArecv = 0;
+
+    WSABUF wsabuf_write;
+    wsabuf_write.buf = buf_write;
+    wsabuf_write.len = NUM_DATA_WRITE;
+
+    WSABUF wsabuf_read;
+    wsabuf_read.buf = buf_read;
+    wsabuf_read.len = set.size_data * k_data + 5;   
 
     LARGE_INTEGER timenow;
     LARGE_INTEGER timelast;
@@ -563,6 +581,7 @@ int TCPClient::thread_tcp_client()
         {
             last_error = WSAGetLastError();
             std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_INVALID_SOCKET CODE_ERROR: " << last_error << std::endl;
+            Sleep(2000);
             return -1;
         }
 
@@ -606,59 +625,83 @@ int TCPClient::thread_tcp_client()
             *buf_write = 3;
             count_send = 0;
 
-            if (WSASend(sock_client, &wsabuf_write, 1, &count_send, flag_send, &send_overlapped, NULL) == SOCKET_ERROR)
+            for (;;)
             {
-                last_error = WSAGetLastError();
-                if (last_error != WSA_IO_PENDING)
-                {
-                    std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_SEND_MESSENG  CODE_ERROR: " << last_error << std::endl;
+                wsabuf_write.buf = buf_write+count_send;
+                wsabuf_write.len = NUM_DATA_WRITE-count_send;
 
-                    if (last_error == 10035 || last_error == 10038 || last_error == 10050 || last_error == 10051 || last_error == 10052 ||
-                        last_error == 10053 || last_error == 10054 || last_error == 10057 || last_error == 10058 || last_error == 10053 ||
-                        last_error == 10061 || last_error == 10064 || last_error == 10065 || last_error == 10101)
+                if (WSASend(sock_client, &wsabuf_write, 1, &count_get_byte, flag_send, &send_overlapped, NULL) == SOCKET_ERROR)
+                {
+                    last_error = WSAGetLastError();
+                    if (last_error != WSA_IO_PENDING)
                     {
-                        Sleep(2000);
+                        std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_SEND_MESSENG  CODE_ERROR: " << last_error << std::endl;
                         closesocket(sock_client);
+                        Sleep(2000);
+                        sock_client = INVALID_SOCKET;
                         break;
                     }
-                    continue;
                 }
-            }
 
-            result_wait_send = WSAWaitForMultipleEvents(1, &send_overlapped.hEvent, TRUE, INFINITE, TRUE);
-            if (result_wait_send == WSA_WAIT_FAILED)
+                result_wait_send = WSAWaitForMultipleEvents(1, &send_overlapped.hEvent, TRUE, INFINITE, TRUE);
+                if (result_wait_send == WSA_WAIT_FAILED)
+                {
+                    last_error = WSAGetLastError();
+                    std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_WAIT_EVENT CODE_ERROR: " << last_error << std::endl;
+                    closesocket(sock_client);
+                    Sleep(2000);
+                    sock_client = INVALID_SOCKET;
+                    break;
+                }
+
+                WSAResetEvent(send_overlapped.hEvent);
+
+                if (!WSAGetOverlappedResult(sock_client, &send_overlapped, &count_get_byte, FALSE, &flag_send))
+                {
+                    last_error = WSAGetLastError();
+                    std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_SEND_MESSENG CODE_ERROR: " << last_error << std::endl;
+                    closesocket(sock_client);
+                    Sleep(2000);
+                    sock_client = INVALID_SOCKET;
+                    break;
+                }
+
+                count_send += count_get_byte;
+
+                if (count_send == 0)
+                {
+                    std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_REQEST BAD SIZE DATA " << std::endl;
+                    closesocket(sock_client);
+                    Sleep(2000);
+                    sock_client = INVALID_SOCKET;
+                    break;
+                }
+                else if (count_send < NUM_DATA_WRITE) continue;
+            }                 
+
+            if (sock_client == INVALID_SOCKET)
             {
-                last_error = WSAGetLastError();
-                std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_WAIT_EVENT CODE_ERROR: " << last_error << std::endl;
-                closesocket(sock_client);
                 break;
-            }
-
-            WSAResetEvent(send_overlapped.hEvent);
-
-            WSAGetOverlappedResult(sock_client, &send_overlapped, &count_send, FALSE, &flag_send);
-            if (count_send != num_data_read)
-            {
-                last_error = WSAGetLastError();
-                std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_REQEST CLIENT CODE_ERROR: " << last_error << std::endl;
-                closesocket(sock_client);
-                break;
-            }
+            }        
             
             count_read = 0;
             num_data_from_server = 0;
-            status_WSArecv = 0;
 
             for (;;)
             {
+                wsabuf_read.buf = buf_read+count_read;
+                wsabuf_read.len = set.size_data * k_data + 5-count_read;
+
                 if (WSARecv(sock_client, &wsabuf_read, 1, &count_get_byte, &flag_read, &recv_overlapped, NULL) == SOCKET_ERROR)
                 {
+                    
                     last_error = WSAGetLastError();
                     if (last_error != WSA_IO_PENDING)
                     {
                         std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_RECV CLIENT_ID: CODE_ERROR: " << last_error << std::endl;
                         closesocket(sock_client);
-                        status_WSArecv = 1;
+                        Sleep(2000);
+                        sock_client = INVALID_SOCKET;
                         break;
                     }
                 }
@@ -669,9 +712,11 @@ int TCPClient::thread_tcp_client()
                     last_error = WSAGetLastError();
                     std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_WSA_WAIT_EVENT CODE_ERROR: " << last_error << std::endl;
                     closesocket(sock_client);
-                    status_WSArecv = 1;
+                    Sleep(2000);
+                    sock_client = INVALID_SOCKET;
                     break;
                 }
+
                 WSAResetEvent(recv_overlapped.hEvent);
 
                 if (!WSAGetOverlappedResult(sock_client, &recv_overlapped, &count_get_byte, FALSE, &flag_read))
@@ -679,22 +724,30 @@ int TCPClient::thread_tcp_client()
                     last_error = WSAGetLastError();
                     std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_READ_SERVER CODE_ERROR: " << last_error << std::endl;
                     closesocket(sock_client);
-                    status_WSArecv = 1;
+                    Sleep(2000);
+                    sock_client = INVALID_SOCKET;
                     break;
                 }
 
+                
                 count_read += count_get_byte;
+              
                 if (count_read >= 5 && num_data_from_server == 0)
-                {
+                {                    
+                    command = *buf_read;
                     num_data_from_server = *((int*)(buf_read + 1));
-                    num_data_from_server = num_data_from_server * k_data;
-                }
-                else
-                {
-                    continue;
                 }
 
-                if (count_read < num_data_from_server + 5)
+                if (num_data_from_server != set.size_data)
+                {
+                    std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_RECEPTION BAD SIZE DATA (watch config file) " << std::endl;
+                    closesocket(sock_client);
+                    Sleep(2000);
+                    sock_client = INVALID_SOCKET;
+                    break;
+                }
+
+                if (count_read < num_data_from_server*k_data + 5)
                 {
                     continue;
                 }
@@ -704,10 +757,10 @@ int TCPClient::thread_tcp_client()
                 }
             }
 
-            if (status_WSArecv != 0)
+            if (sock_client == INVALID_SOCKET)
             {
                 break;
-            }
+            }           
 
             ibuf = bufmemory;
             jbuf = buf_read;
@@ -720,7 +773,7 @@ int TCPClient::thread_tcp_client()
                 ibuf++;
             }
             ReleaseMutex(mutex);
-            
+
         }
     }
     return 0;
@@ -731,4 +784,10 @@ void TCPClient::close_tcp_unit()
 }
 
 void TCPClient::restart_thread()
-{}
+{
+}
+
+void TCPClient::status_thread()
+{
+}
+

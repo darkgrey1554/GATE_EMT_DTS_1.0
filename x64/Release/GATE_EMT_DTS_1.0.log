@@ -1,19 +1,19 @@
-﻿  tcpgateW.cpp
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(115,44): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(122,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(133,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(144,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(155,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(166,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(201,27): warning C4267: return: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(282,12): warning C4101: f: неиспользованная локальная переменная
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(595,72): warning C4244: =: преобразование "double" в "float", возможна потеря данных
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(697,32): warning C4018: <: несоответствие типов со знаком и без знака
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(511,11): warning C4101: f: неиспользованная локальная переменная
-D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(512,10): warning C4101: s: неиспользованная локальная переменная
+﻿  GATE_EMT_DTS_1.0.cpp
+  tcpgateW.cpp
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(116,44): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(123,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(134,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(145,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(156,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(167,61): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(202,27): warning C4267: return: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(435,32): warning C4018: <: несоответствие типов со знаком и без знака
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(285,12): warning C4101: f: неиспользованная локальная переменная
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(608,72): warning C4244: =: преобразование "double" в "float", возможна потеря данных
+D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\tcpgateW.cpp(744,32): warning C4018: <: несоответствие типов со знаком и без знака
   Создание кода
-  1 of 396 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+  4 of 396 functions ( 1.0%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    3 functions had inline decision re-evaluated but remain unchanged
+    2 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   GATE_EMT_DTS_1.0.vcxproj -> D:\Program Files (x86)\project\GATE_EMT_DTS_1.0\x64\Release\GATE_EMT_DTS_1.0.exe
