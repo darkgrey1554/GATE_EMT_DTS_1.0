@@ -273,14 +273,38 @@ int TCPServer::thread_tcp_server()
 
     char* ibuf;
     char* jbuf;
-    char* buf_write = new char[set.size_data*k_data+4];
+    char* buf_write;
+    int size_data_byte;
+    int size_data_send;
+    if (set.type_data != TypeData::GROUP) 
+    { 
+        size_data_byte = set.size_data * k_data;
+        size_data_send = size_data_byte + 4;
+        buf_write = new char[size_data_send];
+        
+    }
+    else 
+    {
+        buf_write = new char[4108];
+        size_data_byte = 4108;
+        size_data_send = 4108;
+    }
+        
+    
     DWORD flag_send = 0;
     DWORD count_send = 0;
     DWORD count_get_byte_send = 0;
     
     WSABUF wsabuf_write;
     wsabuf_write.buf = buf_write;
-    wsabuf_write.len = set.size_data * k_data + 4;
+    wsabuf_write.len = size_data_send;
+
+    LARGE_INTEGER timenow;
+    LARGE_INTEGER timelast;
+    LARGE_INTEGER f_hz;
+    float time;
+    QueryPerformanceFrequency(&f_hz);
+
 
     float* f;
     /// инициализация общей памяти 
@@ -302,13 +326,13 @@ int TCPServer::thread_tcp_server()
         return -1;
     }
 
-    memory = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, set.size_data*k_data, set.namesharedmemory.c_str());
+    memory = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size_data_byte, set.namesharedmemory.c_str());
     if (memory == NULL)
     {
         std::cout << "SERVER ID:" << set.id_unit << "\tERROR_INITIALIZATION_SHARED_MEMORY\tCODE_ERROR: " << GetLastError() << std::endl;
         return -1;
     }
-    bufmemory = (char*)MapViewOfFile(memory, FILE_MAP_ALL_ACCESS, 0, 0, set.size_data * k_data);
+    bufmemory = (char*)MapViewOfFile(memory, FILE_MAP_ALL_ACCESS, 0, 0, size_data_byte);
     if (bufmemory == NULL)
     {
         std::cout << "SERVER ID:" << set.id_unit << "\tERROR_INITIALIZATION_MAPVIEW\tCODE_ERROR: " << GetLastError() << std::endl;
@@ -368,19 +392,39 @@ int TCPServer::thread_tcp_server()
 
         }
 
+        QueryPerformanceCounter(&timenow);
+        QueryPerformanceCounter(&timelast);
+
         for (;;)
         {
             WaitForSingleObject(semaphor, INFINITE);
 
+            for (;;)
+            {
+                QueryPerformanceCounter(&timenow);
+                time = (timenow.QuadPart - timelast.QuadPart) * 1000.0 / f_hz.QuadPart;
+                if (time >= set.frequency_time)
+                {
+                    std::cout << "SERVER ID: " << set.id_unit << "\tERROR DATA RATE: " << time << std::endl;
+                    break;
+                }
+                if (time > set.frequency_time - TIME_DIV) break;
+                Sleep(1);
+            }
+            QueryPerformanceCounter(&timelast);
+
             ibuf = bufmemory;
             jbuf = buf_write;
-            for (int i = 0; i < 4; i++)
+            if (set.type_data != TypeData::GROUP)
             {
-                *jbuf= *(((char*)&set.size_data) + i);
-                jbuf++;
-            }
+                for (int i = 0; i < 4; i++)
+                {
+                    *jbuf = *(((char*)&set.size_data) + i);
+                    jbuf++;
+                }
+            }           
             WaitForSingleObject(mutex, INFINITE);
-            for (int i = 0; i < set.size_data * k_data; i++)
+            for (int i = 0; i < size_data_byte; i++)
             {
                 *jbuf= *ibuf;
                 jbuf++;
@@ -395,7 +439,7 @@ int TCPServer::thread_tcp_server()
             {
                 flag_send = 0;
                 wsabuf_write.buf = buf_write+count_send;
-                wsabuf_write.len = set.size_data * k_data + 4-count_send;
+                wsabuf_write.len = size_data_send-count_send;
 
                 if (WSASend(connect_client, &wsabuf_write, 1, &count_get_byte_send, flag_send, &send_overlapped, NULL) == SOCKET_ERROR)
                 {
@@ -432,7 +476,7 @@ int TCPServer::thread_tcp_server()
                 WSAResetEvent(send_overlapped.hEvent);
 
                 count_send += count_get_byte_send;
-                if (count_send < set.size_data * k_data + 4)
+                if (count_send < size_data_send)
                 {
                     continue;
                 }
@@ -509,8 +553,23 @@ int TCPClient::thread_tcp_client()
     
     char* ibuf;
     char* jbuf;
-    char* buf_read = new char[set.size_data * k_data + 5];
+    char* buf_read;// = new char[set.size_data * k_data + 5];
     char* buf_write = new char[NUM_DATA_WRITE];
+    int size_data_byte;
+    int size_data_read;
+
+    if (set.type_data != TypeData::GROUP)
+    {
+        size_data_byte = set.size_data * k_data;
+        size_data_read = size_data_byte + 5;
+        buf_read = new char[size_data_read];
+    }
+    else
+    {
+        size_data_byte = 4108;
+        size_data_read = 4108;
+        buf_read = new char[4108];
+    }
     
     DWORD flag_read = 0;
     DWORD count_read = 0;
@@ -555,13 +614,13 @@ int TCPClient::thread_tcp_client()
         return -1;
     }
 
-    memory = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, set.size_data * k_data, set.namesharedmemory.c_str());
+    memory = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size_data_byte, set.namesharedmemory.c_str());
     if (memory == NULL)
     {
         std::cout << "CLIENT ID:" << set.id_unit << "\tERROR_INITIALIZATION_SHARED_MEMORY\tCODE_ERROR: " << GetLastError() << std::endl;
         return -1;
     }
-    bufmemory = (char*)MapViewOfFile(memory, FILE_MAP_ALL_ACCESS, 0, 0, set.size_data * k_data);
+    bufmemory = (char*)MapViewOfFile(memory, FILE_MAP_ALL_ACCESS, 0, 0, size_data_byte);
     if (bufmemory == NULL)
     {
         std::cout << "CLIENT ID:" << set.id_unit << "\tERROR_INITIALIZATION_MAPVIEW\tCODE_ERROR: " << GetLastError() << std::endl;
@@ -601,6 +660,7 @@ int TCPClient::thread_tcp_client()
         {
             std::cout << "CLIENT ID: " << set.id_unit << "\tCONNECT_WITH_SERVER_DONE " << std::endl;
         }
+
         count_get_byte = 0;
         count_read = 0;
         QueryPerformanceCounter(&timelast);
@@ -690,7 +750,7 @@ int TCPClient::thread_tcp_client()
             for (;;)
             {
                 wsabuf_read.buf = buf_read+count_read;
-                wsabuf_read.len = set.size_data * k_data + 5-count_read;
+                wsabuf_read.len = size_data_read-count_read;
 
                 if (WSARecv(sock_client, &wsabuf_read, 1, &count_get_byte, &flag_read, &recv_overlapped, NULL) == SOCKET_ERROR)
                 {
@@ -730,23 +790,26 @@ int TCPClient::thread_tcp_client()
                 }
                 
                 count_read += count_get_byte;
-              
-                if (count_read >= 5 && num_data_from_server == 0)
-                {                    
-                    command = *buf_read;
-                    num_data_from_server = *((int*)(buf_read + 1));
-                }
 
-                if (num_data_from_server != set.size_data)
+                if (set.type_data != TypeData::GROUP)
                 {
-                    std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_RECEPTION BAD SIZE DATA (watch config file) " << std::endl;
-                    closesocket(sock_client);
-                    Sleep(2000);
-                    sock_client = INVALID_SOCKET;
-                    break;
-                }
+                    if (count_read >= 5 && num_data_from_server == 0)
+                    {
+                        command = *buf_read;
+                        num_data_from_server = *((int*)(buf_read + 1));
+                    }
 
-                if (count_read < num_data_from_server*k_data + 5)
+                    if (num_data_from_server != set.size_data || command != 3)
+                    {
+                        std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_RECEPTION BAD SIZE DATA (watch config file) " << std::endl;
+                        closesocket(sock_client);
+                        Sleep(2000);
+                        sock_client = INVALID_SOCKET;
+                        break;
+                    }
+                }            
+               
+                if (count_read < size_data_read)
                 {
                     continue;
                 }
@@ -763,10 +826,10 @@ int TCPClient::thread_tcp_client()
 
             ibuf = bufmemory;
             jbuf = buf_read;
-            jbuf += 5;
+            if (set.type_data != TypeData::GROUP) jbuf += 5;
 
             WaitForSingleObject(mutex, INFINITE);
-            for (int i = 0; i < set.size_data * k_data; i++)
+            for (int i = 0; i < size_data_byte; i++)
             {
                 *ibuf = *jbuf;
                 jbuf++;

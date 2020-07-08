@@ -4,7 +4,7 @@
 #include <iostream>
 #include "tcpgateW.h"
 
-#define SIZEMASS 100000
+#define SIZEMASS 100
 
 void f()
 {
@@ -35,24 +35,24 @@ next1:
     HANDLE mutex1;
     HANDLE memory1;
     char* bufmemory1;
-    float* f;
+    char* f;
 
-    float ff=0.;
-    float tick = 0.;
+    char ff=0;
+    int tick = 0;
     HANDLE mutex2;
     HANDLE memory2;
     HANDLE semaphor2;
     char* bufmemory2;
     char* ibuf;
 
-    mutex1= CreateMutexA(NULL, FALSE, "mutexsharmemory_emtdts_analog_in"); 
-    memory1 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_analog_in");
+    mutex1= CreateMutexA(NULL, FALSE, "mutexsharmemory_emtdts_binar_in"); 
+    memory1 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_binar_in");
     bufmemory1 = (char*)MapViewOfFile(memory1, FILE_MAP_ALL_ACCESS, 0, 0, SIZEMASS * 4);
 
-    mutex2 = CreateMutexA(NULL, FALSE, "mutexsharmemory_emtdts_analog_out");
-    memory2 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_analog_out");
+    mutex2 = CreateMutexA(NULL, FALSE, "mutexsharmemory_emtdts_binar_out");
+    memory2 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_binar_out");
     bufmemory2 = (char*)MapViewOfFile(memory2, FILE_MAP_ALL_ACCESS, 0, 0, SIZEMASS * 4);
-    semaphor2 = CreateSemaphoreA(NULL, 0, 1, "semaphorsharmemory_emtdts_analog_out");
+    semaphor2 = CreateSemaphoreA(NULL, 0, 1, "semaphorsharmemory_emtdts_binar_out");
  
 
     std::cout << "Hello World!\n";
@@ -70,12 +70,40 @@ next1:
 
 next:
 
-
-
     WaitForSingleObject(mutex1, INFINITE);
-    f = (float*)bufmemory1;
+    f = bufmemory1;
+    std::cout << (int)*f << "  ";
+    f = (bufmemory1+ SIZEMASS-1);
+    std::cout << (int)*f << std::endl;
+    ReleaseMutex(mutex1);
+
+    ff = tick;
+    if (ff < 0)
+    {
+        ff = 0;
+        tick = 0;
+    }
+    WaitForSingleObject(mutex2, INFINITE);
+    ibuf = bufmemory2;
+    for (int i = 0; i < SIZEMASS; i++)
+    {
+
+        *ibuf= (char)ff%2;
+        if (*ibuf == -1) std::cout <<"qweqweqweqweqwe -- " << (int)ff <<std::endl;
+        ibuf++;
+        ff++;
+        if (ff < 0) ff = 0;
+    }
+    ReleaseMutex(mutex2);
+
+    ReleaseSemaphore(semaphor2, 1, NULL);
+    tick++;
+    Sleep(1000);
+
+    /*WaitForSingleObject(mutex1, INFINITE);
+    f = (int*)bufmemory1;
     std::cout << *f << "  ";
-    f = (float*)(bufmemory1+ SIZEMASS*4-4);
+    f = (int*)(bufmemory1+ SIZEMASS*4-4);
     std::cout << *f << std::endl;
     ReleaseMutex(mutex1);
 
@@ -95,6 +123,6 @@ next:
 
     ReleaseSemaphore(semaphor2, 1, NULL);
     tick++;
-    Sleep(2000);
+    Sleep(1000);*/
     goto next;
 }
