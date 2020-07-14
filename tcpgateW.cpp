@@ -279,18 +279,18 @@ int TCPServer::thread_tcp_server()
     if (set.type_data != TypeData::GROUP) 
     { 
         size_data_byte = set.size_data * k_data;
-        size_data_send = size_data_byte + 4;
+        size_data_send = size_data_byte + 4 + 4;
         buf_write = new char[size_data_send];
         
     }
     else 
     {
-        buf_write = new char[4108];
-        size_data_byte = 4108;
-        size_data_send = 4108;
+        buf_write = new char[4112];
+        size_data_byte = 4112;
+        size_data_send = 4112;
     }
         
-    
+    int command;
     DWORD flag_send = 0;
     DWORD count_send = 0;
     DWORD count_get_byte_send = 0;
@@ -305,6 +305,7 @@ int TCPServer::thread_tcp_server()
     float time;
     QueryPerformanceFrequency(&f_hz);
 
+    DWORD res;
 
     float* f;
     /// инициализация общей памяти 
@@ -397,7 +398,77 @@ int TCPServer::thread_tcp_server()
 
         for (;;)
         {
-            WaitForSingleObject(semaphor, INFINITE);
+            res=WaitForSingleObject(semaphor, 10000);
+            if (res == WAIT_FAILED)
+            {
+                std::cout << "SERVER ID: " << set.id_unit << "\tERROR WAIT SEMAPHOR CODE ERROR: " << GetLastError() << std::endl;
+                Sleep(1000);
+                continue;
+            }
+            else if (res == WAIT_TIMEOUT)
+            {
+                command = 1;
+                jbuf = buf_write;
+
+                for (int i = 0; i < 4; i++)
+                {
+                    *jbuf = *(((char*)&command) + i);
+                    jbuf++;
+                }
+
+                count_get_byte_send = 0;
+                count_send = 0;
+
+                for (;;)
+                {
+                    flag_send = 0;
+                    wsabuf_write.buf = buf_write + count_send;
+                    wsabuf_write.len = 4 - count_send;
+
+                    if (WSASend(connect_client, &wsabuf_write, 1, &count_get_byte_send, flag_send, &send_overlapped, NULL) == SOCKET_ERROR)
+                    {
+                        last_error = WSAGetLastError();
+                        if (last_error != WSA_IO_PENDING)
+                        {
+                            std::cout << "SERVER ID: " << set.id_unit << "\tERROR_SEND CODE_ERROR: " << last_error << std::endl;
+                            closesocket(connect_client);
+                            Sleep(2000);
+                            connect_client = INVALID_SOCKET;
+                            break;
+                        }
+                    }
+                    result_wait_send = WSAWaitForMultipleEvents(1, &send_overlapped.hEvent, TRUE, INFINITE, TRUE);
+                    if (result_wait_send == WSA_WAIT_FAILED)
+                    {
+                        last_error = WSAGetLastError();
+                        std::cout << "SERVER ID: " << set.id_unit << "\tERROR_WSASEND  CODE_ERROR: " << last_error << std::endl;
+                        closesocket(connect_client);
+                        Sleep(2000);
+                        connect_client = INVALID_SOCKET;
+                        break;
+                    }
+                    if (!WSAGetOverlappedResult(connect_client, &send_overlapped, &count_get_byte_send, FALSE, &flag_send))
+                    {
+                        last_error = WSAGetLastError();
+                        std::cout << "SERVER ID: " << set.id_unit << "\tERROR_WSASEND  CODE_ERROR: " << last_error << std::endl;
+                        closesocket(connect_client);
+                        Sleep(2000);
+                        connect_client = INVALID_SOCKET;
+                        break;
+                    }
+                    WSAResetEvent(send_overlapped.hEvent);
+
+                    count_send += count_get_byte_send;
+                    if (count_send < 4)
+                    {
+                        continue;
+                    }
+                    else break;
+                }
+
+                if (connect_client == INVALID_SOCKET) break;
+                continue;
+            }
 
             for (;;)
             {
@@ -415,6 +486,14 @@ int TCPServer::thread_tcp_server()
 
             ibuf = bufmemory;
             jbuf = buf_write;
+            command = 3;
+
+            for (int i = 0; i < 4; i++)
+            {
+                *jbuf = *(((char*)&command) + i);
+                jbuf++;
+            }
+
             if (set.type_data != TypeData::GROUP)
             {
                 for (int i = 0; i < 4; i++)
@@ -431,6 +510,7 @@ int TCPServer::thread_tcp_server()
                 ibuf++;
             }
             ReleaseMutex(mutex);
+            
 
             count_get_byte_send = 0;
             count_send = 0;

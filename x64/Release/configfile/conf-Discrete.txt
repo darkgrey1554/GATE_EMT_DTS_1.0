@@ -1,0 +1,7 @@
+[EMT]
+@EMT_OutputDiscrete	100	sharmemory_emtdts_discrete_out	192.168.109.1	32000	350	0
+@EMT_InputDiscrete	100	sharmemory_emtdts_discrete_in	192.168.109.128	32001	350	0
+[List]
+@KKS
+EMT	DTS
+kksN1	kksK1

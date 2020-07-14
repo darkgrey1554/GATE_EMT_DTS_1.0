@@ -4,7 +4,7 @@
 #include <iostream>
 #include "tcpgateW.h"
 
-#define SIZEMASS 100
+#define SIZEMASS 4108
 
 void f()
 {
@@ -32,7 +32,7 @@ next1:
     Sleep(3000);
     goto next1;*/
 
-    HANDLE mutex1;
+    /*HANDLE mutex1;
     HANDLE memory1;
     char* bufmemory1;
     char* f;
@@ -53,7 +53,7 @@ next1:
     memory2 = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, SIZEMASS * 4, "sharmemory_emtdts_binar_out");
     bufmemory2 = (char*)MapViewOfFile(memory2, FILE_MAP_ALL_ACCESS, 0, 0, SIZEMASS * 4);
     semaphor2 = CreateSemaphoreA(NULL, 0, 1, "semaphorsharmemory_emtdts_binar_out");
- 
+ */
 
     std::cout << "Hello World!\n";
 
@@ -67,10 +67,44 @@ next1:
         tcpunit.push_back(TCPUnit::create_tcp_unit(config->ReadConfigItem(i)));
         Sleep(10);
     }
+    int index = 1;
+    int gr = 1;
+    int size = 20;
 
+    
 next:
+    /*WaitForSingleObject(mutex1, INFINITE);
+    f = (char*)bufmemory1;
+    for (int i = 0; i < size + 12; i++)
+    {
+        std::cout << " "<<(int)*f; 
+        f++;
+    }
+    std::cout<< std::endl;
+    ReleaseMutex(mutex1);
 
-    WaitForSingleObject(mutex1, INFINITE);
+    ff = tick;
+    WaitForSingleObject(mutex2, INFINITE);
+    ibuf = bufmemory2;
+    for (int i = 0; i < 4; i++)
+    {
+        *(ibuf + i) = *(((char*)&index) + i);
+        *(ibuf + i + 4) = *(((char*)&gr) + i);
+        *(ibuf + i + 8) = *(((char*)&size) + i);
+    }
+    ibuf += 12;
+    for (int i = 0; i < size; i++)
+    {
+        *ibuf = ff;
+        ibuf++;
+        ff++;
+    }
+    ReleaseMutex(mutex2);
+
+    ReleaseSemaphore(semaphor2, 1, NULL);
+    tick++;
+    Sleep(1000);
+    /*WaitForSingleObject(mutex1, INFINITE);
     f = bufmemory1;
     std::cout << (int)*f << "  ";
     f = (bufmemory1+ SIZEMASS-1);
@@ -124,5 +158,6 @@ next:
     ReleaseSemaphore(semaphor2, 1, NULL);
     tick++;
     Sleep(1000);*/
+    Sleep(1000);
     goto next;
 }
