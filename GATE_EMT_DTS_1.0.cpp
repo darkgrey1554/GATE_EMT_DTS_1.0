@@ -55,11 +55,17 @@ next1:
     semaphor2 = CreateSemaphoreA(NULL, 0, 1, "semaphorsharmemory_emtdts_binar_out");
  */
 
-    std::cout << "Hello World!\n";
-
+    int res;
     ConfigReader* config= new ConfigReader();
-    config->ReadConfigFile("conf.txt");
-    std::cout << config->NumberItem() << std::endl;
+    res=config->ReadConfigFile("conf.txt");
+
+    if (res != 0)
+    {
+        Sleep(5000);
+        return - 1;
+    }
+
+
     std::list<TCPUnit*> tcpunit;
 
     for (int i = 0; i < config->NumberItem(); i++)

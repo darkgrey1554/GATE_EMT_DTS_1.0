@@ -1,6 +1,12 @@
 [EMT]
 @EMT_OutputAnalog	100	sharmemory_emtdts_analog_out	192.168.109.1	32000	350	0
 @EMT_InputAnalog	100	sharmemory_emtdts_analog_in	192.168.109.128	32001	350	0
+@EMT_OutputDiscrete	100	sharmemory_emtdts_discrete_out	192.168.109.1	32002	350	0
+@EMT_InputDiscrete	100	sharmemory_emtdts_discrete_in	192.168.109.128	32003	350	0
+@EMT_OutputBinar	100	sharmemory_emtdts_binar_out	192.168.109.1	32004	350	0
+@EMT_InputBinar	100	sharmemory_emtdts_binar_in	192.168.109.128	32005	350	0
+@EMT_OutputGroup	100	sharmemory_emtdts_group_out	192.168.109.1	32006	350	0
+@EMT_InputGroup	100	sharmemory_emtdts_group_in	192.168.109.128	32007	350	0
 [List]
 @KKS
 EMT	DTS

@@ -240,7 +240,7 @@ TCPServer::TCPServer(ConfigInfoTCPUnit gate)
 
 int TCPServer::thread_tcp_server()
 {
-
+    Sleep(1);
     std::cout << "START SERVER ID:" << set.id_unit << "\tPORT:" << set.port << "\tIP_ADDRESS: "<<set.ip_address
         << "\tTYPEDATA:" << set.type_data << std::endl;
 
@@ -384,6 +384,7 @@ int TCPServer::thread_tcp_server()
         }
         else
         {
+            Sleep(1);
             std::cout << "SERVER ID: " << set.id_unit << "\tCONNECT_WITH_CLIENT_IP: "
                 << (int)addr_client.sin_addr.S_un.S_un_b.s_b1 << "."
                 << (int)addr_client.sin_addr.S_un.S_un_b.s_b2 << "."
@@ -598,6 +599,7 @@ TCPClient::TCPClient(ConfigInfoTCPUnit gate)
 
 int TCPClient::thread_tcp_client()
 {
+    Sleep(1);
     std::cout << "START CLIENT ID:" << set.id_unit << "\tPORT:" << set.port << "\tIP_ADDRESS: " << set.ip_address
         << "\tTYPEDATA:" << set.type_data << std::endl;
 
@@ -738,6 +740,7 @@ int TCPClient::thread_tcp_client()
         }
         else
         {
+            Sleep(1);
             std::cout << "CLIENT ID: " << set.id_unit << "\tCONNECT_WITH_SERVER_DONE " << std::endl;
         }
 
@@ -871,17 +874,14 @@ int TCPClient::thread_tcp_client()
                 
                 count_read += count_get_byte;
 
-                if (set.type_data != TypeData::GROUP)
+                if (set.type_data != TypeData::GROUP && count_read >= 5 && num_data_from_server == 0)
                 {
-                    if (count_read >= 5 && num_data_from_server == 0)
-                    {
-                        command = *buf_read;
-                        num_data_from_server = *((int*)(buf_read + 1));
-                    }
+                    command = *buf_read;
+                    num_data_from_server = *((int*)(buf_read + 1));
 
                     if (num_data_from_server != set.size_data || command != 3)
                     {
-                        std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_RECEPTION BAD SIZE DATA (watch config file) " << std::endl;
+                        std::cout << "CLIENT ID: " << set.id_unit << "\tERROR_RECEPTION BAD SIZE DATA" << std::endl;
                         closesocket(sock_client);
                         Sleep(2000);
                         sock_client = INVALID_SOCKET;
